@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY /app .
+COPY /src .
 RUN pip install -r requirements.txt
 
 EXPOSE 8844
