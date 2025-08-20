@@ -15,22 +15,22 @@ DEBUG_MODE = int(os.getenv("DEBUG_MODE", "0"))
 # Configure logging
 if DEBUG_MODE:
     logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s [%(levelname)s] %(message)s"
+        level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(message)s"
     )
     logging.debug("Debug mode enabled")
 else:
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s"
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
     )
 
 app = Flask(__name__)
 
+
 def escape_markdown_v2(text):
     """Escapes characters for Telegram MarkdownV2."""
-    escape_chars = r'_*[]()~`>#+-=|{}.!'
-    return ''.join(f'\\{char}' if char in escape_chars else char for char in str(text))
+    escape_chars = r"_*[]()~`>#+-=|{}.!"
+    return "".join(f"\\{char}" if char in escape_chars else char for char in str(text))
+
 
 @app.route("/", methods=["POST", "GET"])
 def glitchtip_webhook():
@@ -40,26 +40,26 @@ def glitchtip_webhook():
 
     logging.debug("Received POST request at root '/'")
     payload = request.json
-    
+
     if payload and payload.get("alias") == "GlitchTip":
         try:
             attachments = payload.get("attachments", [])
             messages = []
-            
+
             # Iterate through all attachments and build a list of formatted messages
             for att in attachments:
                 title = att.get("title", "No title")
                 link = att.get("title_link", "")
                 fields = att.get("fields", [])
-                
+
                 project = ""
                 environment = ""
                 release = ""
-                
+
                 for field in fields:
                     field_title = field.get("title")
                     field_value = field.get("value")
-                    
+
                     if field_title == "Project":
                         project = field_value
                     elif field_title == "Environment":
@@ -87,14 +87,19 @@ def glitchtip_webhook():
             if messages:
                 # Combine all formatted issues into a single message
                 separator = "\n\n*New GlitchTip Event*\n\n"
-                combined_message = "*New GlitchTip Event*\n\n" + separator.join(messages)
-                send_telegram_message(ALERT_CHAT_ID, combined_message, parse_mode="MarkdownV2")
+                combined_message = "*New GlitchTip Event*\n\n" + separator.join(
+                    messages
+                )
+                send_telegram_message(
+                    ALERT_CHAT_ID, combined_message, parse_mode="MarkdownV2"
+                )
         except Exception as e:
             logging.exception(f"Error processing GlitchTip payload: {e}")
     else:
         logging.warning("Received POST with empty or invalid payload")
 
     return "OK", 200
+
 
 def send_telegram_message(chat_id, text, parse_mode=None):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -104,10 +109,11 @@ def send_telegram_message(chat_id, text, parse_mode=None):
 
     logging.debug(f"Sending message to Telegram: {data}")
     try:
-        r = requests.post(url, json=data)
+        r = requests.post(url, json=data, timeout=60)
         logging.debug(f"Telegram response: {r.status_code} {r.text}")
     except Exception as e:
         logging.exception(f"Error sending message to Telegram: {e}")
+
 
 if __name__ == "__main__":
     port = 8844
